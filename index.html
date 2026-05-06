@@ -1,22 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>HTML</title>
-  
-  <!-- HTML -->
-  
-
-  <!-- Custom Styles -->
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Stok Bahan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase v8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
-
 <body>
-  <p>Nothing to see here...</p>
-  <!-- Project -->
-  <script src="main.js"></script>
+<div class="container">
+    <div class="hero-header">
+        <div class="brand">
+            <div class="brand-icon"><i class="fas fa-mug-saucer"></i></div>
+            <div>
+                <h1>Kopi Tepian</h1>
+                <p><i class="fas fa-store"></i>Stok Bahan Makanan · Kopi Tepian</p>
+            </div>
+        </div>
+        <div class="header-stats-badge">
+            <i class="fas fa-chart-line"></i> Real-time &nbsp;|&nbsp; <span id="totalItemsHeader">0</span> item
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-info"><h3><i class="fas fa-boxes"></i> Total Bahan</h3><div class="stat-number" id="totalProducts">0</div></div><div class="stat-icon"><i class="fas fa-cubes"></i></div></div>
+        <div class="stat-card"><div class="stat-info"><h3><i class="fas fa-weight-hanging"></i> Total Stok (kg)</h3><div class="stat-number" id="totalStock">0</div></div><div class="stat-icon"><i class="fas fa-chart-simple"></i></div></div>
+        <div class="stat-card"><div class="stat-info"><h3><i class="fas fa-exclamation-triangle"></i> Stok Rendah</h3><div class="stat-number" id="lowStockItems">0</div></div><div class="stat-icon"><i class="fas fa-bell"></i></div></div>
+        <div class="stat-card"><div class="stat-info"><h3><i class="fas fa-tags"></i> Kategori</h3><div class="stat-number" id="totalCategories">0</div></div><div class="stat-icon"><i class="fas fa-folder-tree"></i></div></div>
+    </div>
+
+    <div class="main-card">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-utensils"></i> Bahan Bahan</div>
+            <button class="btn-primary" id="btnTambah"><i class="fas fa-plus-circle"></i> Tambah Bahan</button>
+        </div>
+        <div class="search-section">
+            <div class="search-wrapper">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Cari bahan, kategori...">
+                <button id="btnSearch" class="btn-outline" style="border: none; background: #A0522D; color: white;"><i class="fas fa-arrow-right"></i> Cari</button>
+            </div>
+            <div class="category-filter" id="categoryFilter"></div>
+        </div>
+
+        <div id="successAlert" class="alert-modern" style="background:#dff0e2; color:#2b5e2b; display:none;"><i class="fas fa-check-circle"></i> <span id="successMessage"></span></div>
+        <div id="errorAlert" class="alert-modern" style="background:#fde2e2; color:#a51b1b; display:none;"><i class="fas fa-exclamation-triangle"></i> <span id="errorMessage"></span></div>
+
+        <div class="table-container">
+            <table class="modern-table">
+                <thead>
+                    <tr><th>Nama Bahan</th><th>Kategori</th><th>Stok (kg)</th><th>Harga (Rp/kg)</th><th>Status</th><th>Aksi</th></tr>
+                </thead>
+                <tbody id="itemsTableBody"><tr><td colspan="6" class="loading-placeholder"><i class="fas fa-spinner fa-spin"></i> Memuat stok...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah -->
+<div class="modal-overlay" id="modalTambah">
+    <div class="modal-glass">
+        <div class="modal-header"><h3><i class="fas fa-plus-circle"></i> Tambah Bahan Baru</h3><button class="close-modal close-tambah">&times;</button></div>
+        <div class="modal-body">
+            <form id="formTambah">
+                <div class="form-group"><label class="form-label">Nama Bahan</label><input type="text" id="nama" class="modern-control" required></div>
+                <div class="form-group"><label class="form-label">Kategori</label><select id="kategori" class="modern-control" required><option value="">Pilih</option><option>Daging & Unggas</option><option>Ikan & Seafood</option><option>Sayuran</option><option>Buah-buahan</option><option>Bumbu & Rempah</option><option>Bahan Pokok</option><option>Minuman</option><option>Lainnya</option></select></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Stok (kg)</label><input type="number" id="stok" step="0.01" min="0" class="modern-control" required></div><div class="form-group"><label class="form-label">Harga (Rp/kg)</label><input type="number" id="harga" min="0" class="modern-control" required></div></div>
+                <div class="form-group"><label class="form-label">Deskripsi (opsional)</label><textarea id="deskripsi" rows="2" class="modern-control"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button class="btn-cancel close-tambah">Batal</button><button class="btn-save" id="btnSimpanTambah"><i class="fas fa-save"></i> Simpan</button></div>
+    </div>
+</div>
+
+<!-- Modal Ubah -->
+<div class="modal-overlay" id="modalUbah">
+    <div class="modal-glass">
+        <div class="modal-header"><h3><i class="fas fa-edit"></i> Edit Bahan</h3><button class="close-modal close-ubah">&times;</button></div>
+        <div class="modal-body">
+            <form id="formUbah"><input type="hidden" id="idUbah">
+                <div class="form-group"><label class="form-label">Nama Bahan</label><input type="text" id="namaUbah" class="modern-control" required></div>
+                <div class="form-group"><label class="form-label">Kategori</label><select id="kategoriUbah" class="modern-control" required><option>Daging & Unggas</option><option>Ikan & Seafood</option><option>Sayuran</option><option>Buah-buahan</option><option>Bumbu & Rempah</option><option>Bahan Pokok</option><option>Minuman</option><option>Lainnya</option></select></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Stok (kg)</label><input type="number" id="stokUbah" step="0.01" min="0" class="modern-control" required></div><div class="form-group"><label class="form-label">Harga (Rp/kg)</label><input type="number" id="hargaUbah" min="0" class="modern-control" required></div></div>
+                <div class="form-group"><label class="form-label">Deskripsi</label><textarea id="deskripsiUbah" rows="2" class="modern-control"></textarea></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button class="btn-cancel close-ubah">Batal</button><button class="btn-save" id="btnSimpanUbah"><i class="fas fa-check"></i> Simpan Perubahan</button></div>
+    </div>
+</div>
+
+<!-- Modal Hapus -->
+<div class="modal-overlay" id="modalHapus">
+    <div class="modal-glass">
+        <div class="modal-header"><h3><i class="fas fa-trash-alt"></i> Konfirmasi Hapus</h3><button class="close-modal close-hapus">&times;</button></div>
+        <div class="modal-body"><p>Yakin ingin menghapus bahan <strong id="namaBarangHapus"></strong> ? Data akan hilang permanen.</p></div>
+        <div class="modal-footer"><button class="btn-cancel close-hapus">Batal</button><button class="btn-save" style="background:#c0392b;" id="btnKonfirmasiHapus">Hapus</button></div>
+    </div>
+</div>
+
+<script src="main.js"></script>
 </body>
 </html>
